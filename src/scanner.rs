@@ -56,6 +56,20 @@ impl Scanner {
             },
             '/' => if self.check('/') {
                 while self.peek() != '\n' && !self.is_at_end() { self.advance(); }
+            } else if self.check('*') {
+                let mut nesting_depths = 0;
+                while !(self.peek() == '*' && self.peek_next() == '/' && nesting_depths == 0) && !self.is_at_end() {
+                    if self.peek() == '\n' { self.line += 1; }
+
+                    if self.peek() == '/' && self.peek_next() == '*' {
+                        nesting_depths += 1;
+                    } else if self.peek() == '*' && self.peek_next() == '/' {
+                        nesting_depths -= 1;
+                    }
+
+                    self.advance();
+                }
+                self.advance(); self.advance(); // skip the final */
             } else {
                 self.add_token(TokenType::Slash);
             }
