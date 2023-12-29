@@ -21,7 +21,7 @@ fn main() -> io::Result<()> {
 
 fn run_file(path: &str) -> io::Result<()> {
     let content = fs::read_to_string(path)?;
-    run(&content);
+    run(&content)?;
     Ok(())
 }
 
@@ -32,14 +32,14 @@ fn run_prompt() -> io::Result<()> {
         stdout().flush().unwrap();
         stdin().read_line(&mut line).expect("Failed to read line");
 
-        run(&line);
+        run(&line)?;
         println!("You entered: {}", line.trim());
     }
 }
 
 fn run(source: &str) -> io::Result<()> {
-    let scanner = Scanner::new(source);
-    tokens = scanner.scan_tokens();
+    let mut scanner = scanner::Scanner::new(source.to_string());
+    let tokens = scanner.scan_tokens();
 
     for token in tokens {
         println!("{:?}", token);

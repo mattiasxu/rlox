@@ -1,7 +1,7 @@
 use crate::token::{Token, TokenType, Literal};
 use crate::errors::error;
 
-struct Scanner {
+pub struct Scanner {
     source: Vec<char>,
     tokens: Vec<Token>,
     start: usize,
@@ -10,12 +10,12 @@ struct Scanner {
 }
 
 impl Scanner {
-    fn new(source: String) -> Scanner {
+    pub fn new(source: String) -> Scanner {
         let source_chars = source.chars().collect();
         Scanner { source: source_chars, tokens: Vec::new(), start: 0, current: 0, line: 1 }
     }
 
-    fn scan_tokens(&self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();
@@ -25,7 +25,7 @@ impl Scanner {
         return self.tokens.clone();
     }
 
-    fn scan_token(&self) {
+    fn scan_token(&mut self) {
         let c = self.advance();
         match c {
             '(' => self.add_token(TokenType::LeftParen),
@@ -38,18 +38,22 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
-            '!' => self.add_token(
-                if self.check('=') { TokenType::BangEqual } else { TokenType::Bang }
-            ),
-            '=' => self.add_token(
-                if self.check('=') { TokenType::EqualEqual } else { TokenType::Equal }
-            ),
-            '<' => self.add_token(
-                if self.check('=') { TokenType::LessEqual } else { TokenType::Less }
-            ),
-            '>' => self.add_token(
-                if self.check('=') { TokenType::GreaterEqual } else { TokenType::Greater }
-            ),
+            '!' => {
+                let token_type = if self.check('=') { TokenType::BangEqual } else { TokenType::Bang };
+                self.add_token(token_type);
+            },
+            '=' => {
+                let token_type = if self.check('=') { TokenType::EqualEqual } else { TokenType::Equal };
+                self.add_token(token_type);
+            }
+            '<' => {
+                let token_type = if self.check('=') { TokenType::LessEqual } else { TokenType::Less };
+                self.add_token(token_type);
+            },
+            '>' => {
+                let token_type = if self.check('=') { TokenType::GreaterEqual } else { TokenType::Greater };
+                self.add_token(token_type);
+            },
             '/' => if self.check('/') {
                 while self.peek() != '\n' && !self.is_at_end() { self.advance(); }
             } else {
@@ -60,7 +64,7 @@ impl Scanner {
             '"' => self.string(),
             _ => if c.is_digit(10) {
                 self.number();
-            } else if c.is_alphanumeric() {
+            } else if c.is_alphabetic() {
                 self.identifier();
             } else {
                 error(self.line, "Unexpected character");
@@ -68,7 +72,7 @@ impl Scanner {
         }
     }
 
-    fn identifier(&self) {
+    fn identifier(&mut self) {
         while self.peek().is_alphanumeric() { self.advance(); }
 
         let text = self.source[self.start..self.current].iter().collect::<String>();
@@ -77,7 +81,7 @@ impl Scanner {
         self.add_token(token_type);
     }
 
-    fn number(&self) {
+    fn number(&mut self) {
         while self.peek().is_digit(10) { self.advance(); }
 
         if self.peek() == '.' && self.peek_next().is_digit(10) {
@@ -92,7 +96,7 @@ impl Scanner {
         }
     }
 
-    fn string(&self) {
+    fn string(&mut self) {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {self.line += 1}
             self.advance();
@@ -111,22 +115,22 @@ impl Scanner {
         return self.current >= self.source.len();
     }
 
-    fn advance(&self) -> char {
+    fn advance(&mut self) -> char {
         let c = self.source[self.current];
         self.current += 1;
         return c;
     }
 
-    fn add_token(&self, token_type: TokenType) {
+    fn add_token(&mut self, token_type: TokenType) {
         self.add_token_with_literal(token_type, None);
     }
 
-    fn add_token_with_literal(&self, token_type: TokenType, literal: Option<Literal>) {
+    fn add_token_with_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
         let text: String = self.source[self.start..self.current].iter().collect();
         self.tokens.push(Token { token_type, lexeme: text, literal, line: 0 });
     }
 
-    fn check(&self, expected: char) -> bool {
+    fn check(&mut self, expected: char) -> bool {
         if self.is_at_end() { return false }
         if self.source[self.current] != expected { return false }
 
